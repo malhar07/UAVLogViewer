@@ -21,23 +21,32 @@
             <sidebar/>
 
             <main class="col-md-9 ml-sm-auto col-lg-10 flex-column d-sm-flex" role="main">
-
-                <div class="row"
-                     v-bind:class="[state.showMap ? 'h-50' : 'h-100']"
-                     v-if="state.plotOn">
-                    <div class="col-12">
-                        <Plotly/>
+                <div class="row" style="height: 100%;">
+                    <div class="col-md-8" style="height: 100%;">
+                        <div class="row"
+                             v-bind:class="[state.showMap ? 'h-50' : 'h-100']"
+                             v-if="state.plotOn">
+                            <div class="col-12">
+                                <Plotly/>
+                            </div>
+                        </div>
+                        <div class="row" v-bind:class="[state.plotOn ? 'h-50' : 'h-100']"
+                             v-if="state.mapAvailable && mapOk && state.showMap">
+                            <div class="col-12 noPadding">
+                                <CesiumViewer ref="cesiumViewer"/>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="row" v-bind:class="[state.plotOn ? 'h-50' : 'h-100']"
-                     v-if="state.mapAvailable && mapOk && state.showMap">
-                    <div class="col-12 noPadding">
-                        <CesiumViewer ref="cesiumViewer"/>
+                    <div class="col-md-4" style="height: 100%;">
+                        <!-- Future space for additional widgets -->
                     </div>
                 </div>
             </main>
 
         </div>
+
+        <!-- Simple ChatBot Component -->
+        <ChatBot />
     </div>
 </template>
 
@@ -60,6 +69,7 @@ import { MavlinkDataExtractor } from '../tools/mavlinkDataExtractor'
 import { DjiDataExtractor } from '../tools/djiDataExtractor'
 import MagFitTool from '@/components/widgets/MagFitTool.vue'
 import EkfHelperTool from '@/components/widgets/EkfHelperTool.vue'
+import ChatBot from '@/components/ChatBot.vue'
 import Vue from 'vue'
 
 export default {
@@ -239,7 +249,8 @@ export default {
         DeviceIDViewer,
         AttitudeViewer,
         MagFitTool,
-        EkfHelperTool
+        EkfHelperTool,
+        ChatBot
     },
     computed: {
         mapOk () {
