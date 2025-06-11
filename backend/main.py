@@ -24,15 +24,21 @@ class ChatResponse(BaseModel):
 
 # Ollama API configuration
 OLLAMA_URL = "http://localhost:11434"
-MODEL_NAME = "llama3:latest"
+MODEL_NAME = "phi3:mini"
 
 def query_ollama(message: str) -> str:
     """Query Ollama Llama3 model with the user message using streaming"""
     try:
         payload = {
             "model": MODEL_NAME,
-            "prompt": f"You are a helpful UAV (drone) log analysis assistant. Keep responses concise and helpful. User question: {message}",
-            "stream": True
+            "prompt": f"You are a UAV assistant. Be concise. Question: {message}",
+            "stream": True,
+            "options": {
+                "temperature": 0.7,
+                "num_predict": 150,  # Limit response length for speed
+                "top_p": 0.9,
+                "repeat_penalty": 1.1
+            }
         }
         
         response = requests.post(
