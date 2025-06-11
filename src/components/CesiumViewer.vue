@@ -85,7 +85,8 @@ import {
 } from './cesiumExtra/boundingPolygon.js'
 
 // Set Cesium token from environment variable
-Ion.defaultAccessToken = process.env.VUE_APP_CESIUM_TOKEN || ''
+Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyMGZkYjhkMS1iZDYzLTRkN2QtYTA1Yy03ZDlmN' +
+'GE4OTNmMTMiLCJpZCI6MzEwNjk0LCJpYXQiOjE3NDk1OTIyNDN9.uyKFJCYtBRMKVUQ_0LpVPMEArM5_X1sUNfK0MACaeis'
 
 const colorCoderMode = new ColorCoderMode(store)
 const colorCoderRange = new ColorCoderRange(store)
@@ -261,9 +262,9 @@ export default {
                         scene3DOnly: false,
                         selectionIndicator: false,
                         shadows: true,
-                        // eslint-disable-next-line
-                        baseLayer: new ImageryLayer.fromProviderAsync(
-                            IonImageryProvider.fromAssetId(3954)
+                        // Use a working Cesium Ion base layer
+                        baseLayer: ImageryLayer.fromProviderAsync(
+                            IonImageryProvider.fromAssetId(2)
                         ),
                         imageryProviderViewModels: imageryProviders,
                         orderIndependentTranslucency: false,
@@ -329,7 +330,7 @@ export default {
                 iconUrl: '/Widgets/Images/ImageryProviders/sentinel-2.png',
                 tooltip: 'Sentinel 2 Imagery',
                 creationFunction: function () {
-                    return ImageryLayer.fromProviderAsync(IonImageryProvider.fromAssetId(3812))
+                    return ImageryLayer.fromProviderAsync(IonImageryProvider.fromAssetId(2))
                 }
             })
             imageryProviders.push(this.sentinelProvider)
