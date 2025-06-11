@@ -36,12 +36,30 @@
         </div>
       </div>
       
+      <div class="file-upload-container" v-if="!currentLogId">
+        <input 
+          type="file" 
+          @change="handleFileUpload" 
+          accept=".bin,.tlog"
+          ref="fileInput"
+          style="display: none"
+        />
+        <button @click="$refs.fileInput.click()" :disabled="isUploading" class="upload-btn">
+          {{ isUploading ? 'Uploading...' : 'Upload Log File (.bin/.tlog)' }}
+        </button>
+      </div>
+      
+      <div class="log-info" v-if="currentLogId">
+        <small>Analyzing log: {{ currentLogId }}</small>
+        <button @click="clearLog" class="clear-log-btn">×</button>
+      </div>
+      
       <div class="chat-input-container">
         <input 
           v-model="currentMessage"
           @keypress.enter="sendMessage"
           type="text" 
-          placeholder="Ask about your UAV log data..."
+          :placeholder="currentLogId ? 'Ask about this log file...' : 'Ask about UAV operations...'"
           class="chat-input"
           :disabled="isTyping"
         />
@@ -61,14 +79,16 @@ export default {
       isMinimized: false,
       currentMessage: '',
       isTyping: false,
-      messages: []
+      messages: [],
+      currentLogId: null,
+      isUploading: false
     }
   },
   mounted() {
     // Add initial message after component is mounted
     this.messages.push({
       type: 'bot',
-      text: 'Hello! I\'m your UAV Log Assistant powered by Llama3. I can help you with drone operations, flight analysis, and answer questions about UAV systems. What would you like to know?',
+      text: 'Hello! I\'m your UAV Log Assistant powered by AI. Upload a .bin or .tlog flight log file to analyze specific flight data, or ask me general questions about UAV operations and systems.',
       timestamp: this.getCurrentTime()
     })
   },
@@ -95,13 +115,14 @@ export default {
       
       try {
         // Call backend API
-        const response = await fetch('http://localhost:8000/chat', {
+        const         response = await fetch('http://localhost:8000/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            message: userMessage
+            message: userMessage,
+            log_id: this.currentLogId
           })
         })
         
@@ -131,6 +152,58 @@ export default {
         this.isTyping = false
         this.scrollToBottom()
       }
+    },
+    
+    async handleFileUpload(event) {
+      const file = event.target.files[0]
+      if (!file) return
+      
+      this.isUploading = true
+      
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await fetch('http://localhost:8000/upload', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        this.currentLogId = data.log_id
+        
+        // Add success message
+        this.messages.push({
+          type: 'bot',
+          text: `Log file uploaded successfully! Log ID: ${data.log_id}. You can now ask questions about this flight log.`,
+          timestamp: this.getCurrentTime()
+        })
+        
+      } catch (error) {
+        console.error('Upload error:', error)
+        this.messages.push({
+          type: 'bot',
+          text: 'Sorry, there was an error uploading your log file. Please try again.',
+          timestamp: this.getCurrentTime()
+        })
+      } finally {
+        this.isUploading = false
+        // Clear the file input
+        event.target.value = ''
+      }
+    },
+    
+    clearLog() {
+      this.currentLogId = null
+      this.messages.push({
+        type: 'bot',
+        text: 'Log file cleared. You can upload a new log file or ask general UAV questions.',
+        timestamp: this.getCurrentTime()
+      })
     },
 
     getCurrentTime () {
@@ -360,5 +433,59 @@ export default {
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* File upload styles */
+.file-upload-container {
+  padding: 10px 15px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.upload-btn {
+  width: 100%;
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: #218838;
+}
+
+.upload-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.log-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 15px;
+  background: #e8f5e8;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 12px;
+  color: #2c3e50;
+}
+
+.clear-log-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.clear-log-btn:hover {
+  background: rgba(220, 53, 69, 0.1);
 }
 </style>
