@@ -45,8 +45,8 @@
 
         </div>
 
-        <!-- Simple ChatBot Component -->
-        <ChatBot />
+        <!-- Floating Chat Dialog -->
+        <Chat />
     </div>
 </template>
 
@@ -69,7 +69,7 @@ import { MavlinkDataExtractor } from '../tools/mavlinkDataExtractor'
 import { DjiDataExtractor } from '../tools/djiDataExtractor'
 import MagFitTool from '@/components/widgets/MagFitTool.vue'
 import EkfHelperTool from '@/components/widgets/EkfHelperTool.vue'
-import ChatBot from '@/components/ChatBot.vue'
+import Chat from '@/components/Chat.vue'
 import Vue from 'vue'
 
 export default {
@@ -250,7 +250,7 @@ export default {
         AttitudeViewer,
         MagFitTool,
         EkfHelperTool,
-        ChatBot
+        Chat
     },
     computed: {
         mapOk () {

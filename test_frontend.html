@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UAV Log Analyzer Test</title>
+</head>
+<body>
+    <h1>UAV Log Analyzer Test</h1>
+    
+    <div>
+        <h2>Upload Test</h2>
+        <input type="file" id="fileInput" accept=".bin">
+        <button onclick="uploadFile()">Upload</button>
+        <div id="uploadResult"></div>
+    </div>
+    
+    <div>
+        <h2>Chat Test</h2>
+        <input type="text" id="messageInput" placeholder="Enter message" value="what was the highest altitude?">
+        <input type="text" id="logIdInput" placeholder="Log ID (optional)">
+        <button onclick="sendMessage()">Send</button>
+        <div id="chatResult"></div>
+    </div>
+
+    <script>
+        let currentLogId = null;
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentLogId = result.log_id;
+                    document.getElementById('logIdInput').value = currentLogId;
+                    document.getElementById('uploadResult').innerHTML = 
+                        `<p style="color: green;">Upload successful! Log ID: ${currentLogId}</p>`;
+                } else {
+                    document.getElementById('uploadResult').innerHTML = 
+                        `<p style="color: red;">Upload failed: ${result.detail}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = 
+                    `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            const logId = document.getElementById('logIdInput').value || currentLogId;
+            
+            const params = new URLSearchParams({ msg: message });
+            if (logId) {
+                params.append('logId', logId);
+            }
+
+            const url = `/api/chat?${params}`;
+            console.log('Sending request to:', url);
+
+            try {
+                const response = await fetch(url, { method: 'POST' });
+                const result = await response.json();
+                
+                document.getElementById('chatResult').innerHTML = 
+                    `<p><strong>Response:</strong> ${result.response}</p>
+                     <p><strong>RAG Powered:</strong> ${result.rag_powered}</p>
+                     <p><strong>URL:</strong> ${url}</p>`;
+            } catch (error) {
+                document.getElementById('chatResult').innerHTML = 
+                    `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html> 
