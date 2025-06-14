@@ -42,7 +42,9 @@ class EnhancedUAVAssistant:
             request_type = self._classify_request(message, log_id, context)
             
             # Route to appropriate handler
-            if request_type == "rag_query":
+            if request_type == "base_agent_query":
+                return self._handle_base_agent_query(message, log_id)
+            elif request_type == "rag_query":
                 return self._handle_rag_query(message, log_id, analysis_mode)
             elif request_type == "multimodal_analysis":
                 return self._handle_multimodal_request(message, context)
@@ -79,7 +81,7 @@ class EnhancedUAVAssistant:
         if any(keyword in message_lower for keyword in ["predict", "forecast", "future", "trend", "maintenance"]):
             return "predictive_analysis"
         
-        # STRICT: Only treat as log query if log_id exists AND question is about specific flight data
+        # STRICT: Route log-specific queries to RAG with concise responses
         if log_id and any(keyword in message_lower for keyword in [
             "altitude", "highest", "maximum", "speed", "battery", "gps", 
             "flight time", "duration", "this flight", "the flight", "log",
@@ -271,6 +273,27 @@ class EnhancedUAVAssistant:
         except Exception as e:
             return {
                 "response": f"❌ Predictive analysis failed: {str(e)}",
+                "error": True
+            }
+    
+    def _handle_base_agent_query(self, message: str, log_id: str) -> Dict[str, Any]:
+        """Handle log-specific queries using the new function calling base agent"""
+        try:
+            # Call the base agent with function calling capabilities
+            base_response = self.base_agent.chat(message, log_id=log_id)
+            
+            # Format the response to match the enhanced AI structure
+            return {
+                "response": base_response.get("response", "No response generated"),
+                "function_calling": True,
+                "rag_powered": False,
+                "source_documents": [],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {
+                "response": f"❌ Function calling analysis failed: {str(e)}",
                 "error": True
             }
     
