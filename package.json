@@ -24,6 +24,7 @@
     "bootstrap-vue": "^2.22.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
+    "chart.js": "^4.5.0",
     "color": "^3.2.1",
     "colormap": "^2.3.2",
     "crypto-browserify": "^3.12.0",

@@ -38,7 +38,8 @@
                         </div>
                     </div>
                     <div class="col-md-4" style="height: 100%;">
-                        <!-- Future space for additional widgets -->
+                        <!-- Visualization Tab -->
+                        <VisualizationTab v-if="state.processDone" />
                     </div>
                 </div>
             </main>
@@ -70,6 +71,7 @@ import { DjiDataExtractor } from '../tools/djiDataExtractor'
 import MagFitTool from '@/components/widgets/MagFitTool.vue'
 import EkfHelperTool from '@/components/widgets/EkfHelperTool.vue'
 import Chat from '@/components/Chat.vue'
+import VisualizationTab from '@/components/VisualizationTab.vue'
 import Vue from 'vue'
 
 export default {
@@ -250,7 +252,8 @@ export default {
         AttitudeViewer,
         MagFitTool,
         EkfHelperTool,
-        Chat
+        Chat,
+        VisualizationTab
     },
     computed: {
         mapOk () {
