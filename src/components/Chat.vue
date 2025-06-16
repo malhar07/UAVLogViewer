@@ -19,7 +19,7 @@
       <!-- Header -->
       <div class="chat-header">
         <div class="header-content">
-          <h3>🚁 UAV Log Assistant</h3>
+          <h3>UAV Log Assistant</h3>
           <div class="ai-capabilities">
             <span class="capability-badge active">Enhanced AI</span>
             <span class="capability-badge active">RAG Analysis</span>
@@ -66,7 +66,7 @@
       <!-- Messages Area -->
       <div class="messages-container" ref="messagesContainer">
         <div v-if="messages.length === 0" class="welcome-message">
-          <div class="ai-avatar">🚁</div>
+          <div class="ai-avatar">👾</div>
           <div class="message-content">
             <h4>Welcome to UAV Log Assistant!</h4>
             <p>I can help you analyze your UAV flight logs with:</p>
@@ -83,7 +83,7 @@
         <div v-for="(message, index) in messages" :key="index" class="message" :class="message.type">
           <div class="message-avatar">
             <span v-if="message.type === 'user'">👤</span>
-            <span v-else>🚁</span>
+            <span v-else>👾</span>
           </div>
           <div class="message-content">
             <div class="message-text" v-html="formatMessage(message.text)"></div>
@@ -92,7 +92,7 @@
         </div>
 
         <div v-if="isTyping" class="typing-indicator">
-          <div class="typing-avatar">🚁</div>
+          <div class="typing-avatar">👾</div>
           <div class="typing-content">
             <div class="typing-dots">
               <span></span>
@@ -288,7 +288,7 @@ export default {
           }
           
           message += `🚀 **Ready for analysis!** Try asking:\n`
-          message += `• "What is the flight summary?"\n`
+          message += `• "Give me flight summary"\n`
           message += `• "What was the highest altitude?"\n`
           message += `• "Were there any GPS issues?"`
 

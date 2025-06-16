@@ -71,7 +71,7 @@ This project adds a sophisticated AI chatbot capability to the UAV Log Viewer pl
 
 - **AI Framework**: LangChain for agent orchestration
 - **Vector Database**: ChromaDB for semantic search and RAG
-- **Local LLM**: Ollama (llama2, mistral, phi3)
+- **Local LLM**: Ollama (phi3:mini, llama3:latest)
 - **Embeddings**: HuggingFace Sentence Transformers
 - **Backend Integration**: FastAPI endpoints
 - **Agent System**: Custom specialized agents with tool calling
@@ -110,9 +110,9 @@ brew install ollama
 ollama serve
 
 # Pull a model (in another terminal)
-ollama pull llama2
+ollama pull phi3:mini
 # or
-ollama pull mistral
+ollama pull llama3:latest
 ```
 
 ### 4. Start the Server
@@ -240,7 +240,7 @@ Create a `.env` file in the server directory:
 ```env
 # Ollama Configuration
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama2
+OLLAMA_MODEL=phi3:mini
 
 # ChromaDB Configuration
 CHROMA_DB_PATH=./chroma_db
@@ -252,9 +252,9 @@ RAG_OVERLAP=200
 ```
 
 ### Supported Models
-- **llama2**: General purpose, good balance of speed and accuracy
+- **phi3:mini**: Lightweight and efficient, currently used (2.2 GB)
+- **llama3:latest**: More capable but larger, available option (4.7 GB)
 - **mistral**: Fast responses, good for quick queries
-- **phi3**: Lightweight, efficient for basic questions
 - **codellama**: Better for technical/diagnostic queries
 
 ### Agent Specializations
