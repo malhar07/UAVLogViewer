@@ -1,301 +1,300 @@
-# Enhanced UAV Log Viewer 🚁
+# UAV Log Viewer - AI Chatbot Integration
 
-An advanced UAV log analysis platform powered by cutting-edge AI technologies including **RAG (Retrieval-Augmented Generation)**, **Multimodal AI**, and **Predictive Analytics**.
+An intelligent chatbot system for UAV flight log analysis, powered by advanced AI technologies including RAG (Retrieval-Augmented Generation) and specialized agent orchestration.
 
-## 🌟 Enhanced AI Capabilities
+## 🤖 Overview
 
-### 🧠 RAG-Powered Analysis
-- **Vector Database Integration**: ChromaDB for semantic search and retrieval
-- **Deep Insights**: LangChain-powered analysis with contextual understanding
-- **Source Attribution**: Track analysis sources and evidence
-- **Comprehensive Reports**: AI-generated detailed flight reports
+This project adds a sophisticated AI chatbot capability to the UAV Log Viewer platform. The chatbot can analyze flight logs, answer questions about flight data, and provide intelligent insights using natural language processing and retrieval-augmented generation.
 
-### 👁️ Multimodal Dashboard Analysis
-- **Computer Vision**: Analyze UAV dashboard screenshots and images
-- **Safety Assessment**: Automated safety status evaluation from visual indicators
-- **Performance Metrics**: Extract key metrics from dashboard displays
-- **Troubleshooting**: Visual problem identification and recommendations
+## ✨ Chatbot Features
 
-### 🔮 Predictive Analytics
-- **Maintenance Forecasting**: Predict when components need maintenance
-- **Performance Trends**: Identify degradation patterns over time
-- **Failure Prevention**: Early warning system for potential issues
-- **Optimization Recommendations**: Improve flight efficiency and safety
+### 🧠 **Intelligent Agent System**
+- **Specialized Agents**: FlightAnalysisAgent, SafetyAgent, and RAGQueryAgent
+- **Smart Routing**: Automatic intent classification and agent selection
+- **Context Awareness**: Maintains conversation context across interactions
+- **Confidence Scoring**: Provides reliability metrics for responses
 
-### 📊 Comparative Analysis
-- **Multi-Flight Comparison**: Compare performance across multiple flights
-- **Trend Analysis**: Identify patterns and improvements over time
-- **Benchmarking**: Compare against optimal performance metrics
-- **Fleet Management**: Analyze multiple UAVs for fleet optimization
+### 🔍 **RAG-Powered Analysis**
+- **Vector Database**: ChromaDB integration for semantic search
+- **Rich Context**: 10-second flight segments with detailed descriptions
+- **Source Attribution**: Tracks analysis sources and evidence
+- **Deep Insights**: LangChain-powered contextual understanding
 
-## 🚀 Key Features
+### 💬 **Natural Language Interface**
+- **Conversational AI**: Ask questions about flights in plain English
+- **Multi-turn Conversations**: Maintains context across multiple questions
+- **Intelligent Responses**: Combines tool results with RAG context
+- **Fallback Handling**: Graceful handling of unclear queries
 
-### Core Analysis Engine
-- **Memory-Safe Log Parsing**: Efficient .bin file processing with pymavlink
-- **Real-time Analysis**: Stream processing for large log files
-- **Comprehensive Metrics**: Battery, GPS, altitude, vibration, and more
-- **Error Detection**: Automated identification of flight issues
+### 🎯 **Query Types Supported**
+- **Flight Analysis**: "What was the maximum altitude during this flight?"
+- **Safety Assessment**: "Were there any safety issues during the flight?"
+- **Performance Metrics**: "How was the battery performance?"
+- **Technical Diagnostics**: "What caused the vibration spike at 5 minutes?"
+- **General Knowledge**: "What is HDOP in GPS systems?"
 
-### Advanced AI Integration
-- **Multiple Analysis Modes**: Quick, Detailed, Expert, and Safety-focused
-- **Smart Intent Recognition**: Automatically route queries to appropriate AI systems
-- **Enhanced LLM Orchestration**: Ollama integration with multiple model support
-- **Context-Aware Responses**: Maintain conversation context across interactions
+## 🏗️ Chatbot Architecture
 
-### Modern User Interface
-- **Floating Chat Dialog**: Non-intrusive, draggable interface
-- **Dual Upload Support**: Both log files and dashboard images
-- **Real-time Feedback**: Typing indicators and progress updates
-- **Rich Formatting**: Markdown support with enhanced message display
-- **Quick Actions**: One-click report generation and analysis
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AI Chatbot System                       │
+├─────────────────────────────────────────────────────────────┤
+│  Chat Interface (POST /agent-chat)                        │
+│  ├── Message Processing                                   │
+│  ├── Intent Classification                                │
+│  └── Response Generation                                  │
+├─────────────────────────────────────────────────────────────┤
+│  Agent Orchestrator                                        │
+│  ├── LLM-based Intent Classification                      │
+│  ├── Agent Selection & Routing                            │
+│  └── Response Synthesis                                   │
+├─────────────────────────────────────────────────────────────┤
+│  Specialized Agents                                        │
+│  ├── FlightAnalysisAgent (altitude, speed, performance)   │
+│  ├── SafetyAgent (risk assessment, warnings)              │
+│  └── RAGQueryAgent (deep log queries)                     │
+├─────────────────────────────────────────────────────────────┤
+│  RAG Engine                                                │
+│  ├── ChromaDB Vector Database                             │
+│  ├── Flight Segment Embeddings                            │
+│  ├── Semantic Search                                      │
+│  └── Context Retrieval                                    │
+├─────────────────────────────────────────────────────────────┤
+│  LLM Integration                                           │
+│  ├── Ollama Local LLM                                     │
+│  ├── LangChain Framework                                  │
+│  └── Prompt Engineering                                   │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## 🛠️ Technology Stack
+## 🛠️ Chatbot Technology Stack
 
-### Backend Technologies
-- **FastAPI**: High-performance async API framework
-- **LangChain**: LLM application framework for RAG implementation
-- **ChromaDB**: Vector database for semantic search
-- **Sentence Transformers**: Text embeddings for similarity search
-- **Ollama**: Local LLM inference with multimodal support
-- **PyMAVLink**: UAV log file parsing and analysis
+- **AI Framework**: LangChain for agent orchestration
+- **Vector Database**: ChromaDB for semantic search and RAG
+- **Local LLM**: Ollama (llama2, mistral, phi3)
+- **Embeddings**: HuggingFace Sentence Transformers
+- **Backend Integration**: FastAPI endpoints
+- **Agent System**: Custom specialized agents with tool calling
+- **Context Management**: Conversation state and memory handling
 
-### AI & Machine Learning
-- **RAG Architecture**: Retrieval-Augmented Generation for enhanced responses
-- **Vector Embeddings**: Semantic search and similarity matching
-- **Computer Vision**: Dashboard image analysis and interpretation
-- **Predictive Modeling**: Time series analysis for maintenance forecasting
-- **Natural Language Processing**: Intent classification and response generation
+## 📋 Prerequisites
 
-### Frontend Technologies
-- **Vue.js 3**: Reactive frontend framework
-- **Modern CSS**: Advanced styling with animations and transitions
-- **Responsive Design**: Mobile-friendly interface
-- **Real-time Updates**: WebSocket-like experience with polling
-
-## 📋 API Endpoints
-
-### Enhanced Endpoints
-
-#### `POST /upload`
-Upload and process UAV log files with enhanced AI analysis
-- **RAG Processing**: Automatic vector database indexing
-- **Comprehensive Analysis**: Multi-dimensional log evaluation
-- **Metadata Extraction**: Rich flight information extraction
-
-#### `POST /chat`
-Enhanced chat with multiple AI capabilities
-- **Parameters**: `msg`, `logId`, `analysis_mode`
-- **Analysis Modes**: `quick`, `detailed`, `expert`, `safety_focused`
-- **AI Features**: RAG, multimodal, predictive analysis
-
-#### `POST /analyze-dashboard`
-Multimodal dashboard image analysis
-- **Computer Vision**: Extract information from dashboard images
-- **Safety Assessment**: Automated safety status evaluation
-- **Batch Analysis**: Multiple analysis types in one request
-
-#### `POST /generate-report`
-Comprehensive flight report generation
-- **RAG-Powered**: Deep insights from vector database
-- **Multi-Section**: Structured analysis across all flight aspects
-- **Actionable Recommendations**: Specific improvement suggestions
-
-#### `POST /rag-query`
-Direct RAG system queries
-- **Semantic Search**: Vector-based information retrieval
-- **Source Documents**: Attribution and evidence tracking
-- **Contextual Responses**: LLM-enhanced answer generation
-
-#### `POST /compare-flights`
-Multi-flight comparative analysis
-- **Performance Comparison**: Side-by-side flight metrics
-- **Trend Identification**: Pattern recognition across flights
-- **Optimization Insights**: Improvement recommendations
-
-## 🔧 Installation & Setup
-
-### Prerequisites
-- **Python 3.9+**
-- **Node.js 16+**
-- **Ollama** (for LLM inference)
+- **Python 3.8+**
+- **Ollama** (for local LLM)
 - **Git**
 
-### Backend Setup
+## 🚀 How to Run the Chatbot
 
-1. **Clone and Navigate**
-   ```bash
-   git clone <repository-url>
-   cd UAVLogViewer/server
-   ```
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd UAVLogViewer
+```
 
-2. **Create Virtual Environment**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+### 2. Install Dependencies
+```bash
+cd server
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-3. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 3. Setup Ollama
+```bash
+# Install Ollama (macOS)
+brew install ollama
 
-4. **Setup Ollama**
-   ```bash
-   # Install Ollama (visit https://ollama.ai)
-   ollama pull phi3:mini          # For text analysis
-   ollama pull llava:latest       # For multimodal analysis
-   ```
+# Or download from https://ollama.ai
 
-5. **Configure Environment**
-   ```bash
-   export OLLAMA_URL=http://localhost:11434
-   export OLLAMA_MODEL=phi3:mini
-   export VISION_MODEL=llava:latest
-   ```
+# Start Ollama service
+ollama serve
 
-6. **Start Backend Server**
-   ```bash
-   uvicorn api:app --reload --port 8000
-   ```
+# Pull a model (in another terminal)
+ollama pull llama2
+# or
+ollama pull mistral
+```
 
-### Frontend Setup
+### 4. Start the Server
+```bash
+cd server
+source .venv/bin/activate
+python3 api.py
+```
 
-1. **Navigate to Frontend**
-   ```bash
-   cd ../  # Back to project root
-   ```
+The chatbot API will be available at `http://localhost:8000`
 
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+### 5. API Documentation
+- **Interactive API Docs**: `http://localhost:8000/docs`
+- **Chatbot Endpoint**: `POST /agent-chat`
 
-3. **Start Development Server**
-   ```bash
-   npm run serve
-   ```
+## 📖 Chatbot Usage Guide
 
-4. **Access Application**
-   - Frontend: http://localhost:8080
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
+### 1. Upload a Flight Log
+```bash
+curl -X POST "http://localhost:8000/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@your_flight_log.bin"
+```
 
-## 💡 Usage Guide
+### 2. Get Log ID
+```bash
+curl "http://localhost:8000/logs"
+```
 
-### Basic Log Analysis
-1. **Upload Log File**: Drag and drop a .bin file or click to browse
-2. **Wait for Processing**: Enhanced AI analysis with RAG indexing
-3. **Ask Questions**: Use natural language to query your flight data
-4. **Get Insights**: Receive detailed, source-attributed responses
+### 3. Chat with the AI Assistant
 
-### Dashboard Analysis
-1. **Upload Dashboard Image**: Drag and drop a screenshot of your UAV dashboard
-2. **Select Analysis Type**: Choose from general, safety, performance, or troubleshooting
-3. **Get Visual Insights**: Receive computer vision-powered analysis
-4. **Follow Recommendations**: Act on AI-generated suggestions
+#### Basic Flight Analysis
+```bash
+curl -X POST "http://localhost:8000/agent-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What was the maximum altitude during this flight?",
+    "log_id": "your_log_id"
+  }'
+```
 
-### Advanced Features
-- **Analysis Modes**: Switch between Quick, Detailed, Expert, and Safety-focused modes
-- **Comprehensive Reports**: Generate full flight analysis reports
-- **Predictive Analysis**: Get maintenance and performance forecasts
-- **Comparative Analysis**: Compare multiple flights for trend analysis
+#### Safety Assessment
+```bash
+curl -X POST "http://localhost:8000/agent-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Were there any safety issues during the flight?",
+    "log_id": "your_log_id"
+  }'
+```
 
-### Quick Actions
-- **📋 Report**: Generate comprehensive flight report
-- **👁️ Analyze**: Analyze uploaded dashboard image
-- **🔮 Predict**: Run predictive maintenance analysis
+#### Performance Analysis
+```bash
+curl -X POST "http://localhost:8000/agent-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "How was the battery performance throughout the flight?",
+    "log_id": "your_log_id"
+  }'
+```
 
-## 🔍 Analysis Capabilities
+#### Technical Diagnostics
+```bash
+curl -X POST "http://localhost:8000/agent-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Explain the vibration levels during takeoff",
+    "log_id": "your_log_id"
+  }'
+```
 
-### Flight Performance
-- **Duration and Distance**: Complete flight metrics
-- **Altitude Analysis**: Maximum, minimum, and average altitudes
-- **Speed Analysis**: Ground speed and airspeed metrics
-- **Flight Mode Tracking**: Mode changes and time in each mode
+## 📊 Chatbot API Endpoints
 
-### System Health
-- **Battery Performance**: Voltage, current, and capacity analysis
-- **GPS Status**: Satellite count, HDOP, and positioning accuracy
-- **Vibration Analysis**: Motor and frame vibration levels
-- **Sensor Health**: IMU, compass, and other sensor status
+### Primary Chatbot Endpoint
+- `POST /agent-chat` - Main chatbot interface for AI-powered flight analysis
 
-### Safety Assessment
-- **Error Detection**: Automated identification of flight issues
-- **Risk Analysis**: Safety-critical parameter evaluation
-- **Compliance Checking**: Regulatory and safety standard compliance
-- **Emergency Procedures**: Failsafe activation and response analysis
+### Request Format
+```json
+{
+  "message": "Your question about the flight",
+  "log_id": "flight_log_identifier"
+}
+```
 
-### Predictive Insights
-- **Maintenance Scheduling**: Component replacement predictions
-- **Performance Degradation**: Trend analysis and forecasting
-- **Failure Prevention**: Early warning system implementation
-- **Optimization Opportunities**: Efficiency improvement suggestions
+### Response Format
+```json
+{
+  "response": "AI-generated response",
+  "agent_used": "FlightAnalysisAgent",
+  "confidence": 0.95,
+  "sources": ["flight_segment_1", "flight_segment_2"],
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
 
-## 🎯 AI Analysis Modes
+### Supporting Endpoints
+- `POST /upload` - Upload flight log for analysis
+- `GET /logs` - List available logs for chatbot queries
 
-### Quick Mode
-- **Fast Processing**: Rapid analysis for immediate insights
-- **Key Metrics**: Essential flight parameters only
-- **Basic Recommendations**: Simple actionable advice
+## 🎯 Chatbot Use Cases
 
-### Detailed Mode (Default)
-- **Comprehensive Analysis**: Full RAG-powered investigation
-- **Multi-Source Insights**: Vector database and LLM combination
-- **Structured Responses**: Organized, detailed information
+### 🏢 **Commercial Operations**
+- **Fleet Monitoring**: "How did aircraft N123 perform compared to yesterday?"
+- **Safety Compliance**: "Were there any regulatory violations during this flight?"
+- **Maintenance Planning**: "What maintenance issues does this flight data suggest?"
+- **Pilot Training**: "What could the pilot have done better during landing?"
 
-### Expert Mode
-- **Technical Deep-dive**: Advanced technical analysis
-- **Professional Insights**: Expert-level recommendations
-- **Detailed Diagnostics**: In-depth system evaluation
+### 🔬 **Research & Development**
+- **Data Analysis**: "What patterns do you see in the GPS accuracy data?"
+- **Algorithm Testing**: "How did the new flight controller perform?"
+- **Performance Metrics**: "Compare the efficiency of this flight to optimal parameters"
+- **Academic Research**: "Explain the correlation between vibration and motor performance"
 
-### Safety-Focused Mode
-- **Risk Assessment**: Safety-critical parameter analysis
-- **Compliance Checking**: Regulatory standard evaluation
-- **Emergency Preparedness**: Failsafe and emergency procedure analysis
+### 🛠️ **Hobbyist & Developers**
+- **Flight Improvement**: "What caused the altitude fluctuations at 3 minutes?"
+- **Troubleshooting**: "Why did the battery drain faster than expected?"
+- **Learning**: "Explain what HDOP means and why it matters"
+- **Performance Optimization**: "How can I improve my flight efficiency?"
 
-## 🔒 Security & Privacy
+## 🔧 Chatbot Configuration
 
-- **Local Processing**: All AI inference runs locally via Ollama
-- **Data Privacy**: No external API calls for sensitive flight data
-- **Secure Storage**: Local vector database with encrypted storage options
-- **Access Control**: API-level security and authentication ready
+### Environment Variables
+Create a `.env` file in the server directory:
 
-## 🚀 Performance Optimizations
+```env
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
 
-- **Streaming Processing**: Handle large log files efficiently
-- **Vector Caching**: Fast retrieval from indexed flight data
-- **Parallel Processing**: Concurrent analysis for multiple operations
-- **Memory Management**: Efficient resource utilization
+# ChromaDB Configuration
+CHROMA_DB_PATH=./chroma_db
+
+# Agent Configuration
+DEFAULT_AGENT_CONFIDENCE_THRESHOLD=0.7
+RAG_CHUNK_SIZE=1000
+RAG_OVERLAP=200
+```
+
+### Supported Models
+- **llama2**: General purpose, good balance of speed and accuracy
+- **mistral**: Fast responses, good for quick queries
+- **phi3**: Lightweight, efficient for basic questions
+- **codellama**: Better for technical/diagnostic queries
+
+### Agent Specializations
+- **FlightAnalysisAgent**: Altitude, speed, performance metrics
+- **SafetyAgent**: Risk assessment, warnings, compliance
+- **RAGQueryAgent**: Deep log analysis, complex queries
+
+## 🧠 How the Chatbot Works
+
+### 1. Intent Classification
+When you ask a question, the system uses LLM-based classification to determine:
+- **TOOL_CALL**: Needs specific flight data (altitude, battery, etc.)
+- **LOG_QUERY**: Requires deep RAG analysis of flight segments
+- **GENERAL_ANSWER**: General knowledge about UAVs/aviation
+
+### 2. Agent Selection
+Based on the intent, the orchestrator selects the appropriate agent:
+- **FlightAnalysisAgent**: For performance and metrics questions
+- **SafetyAgent**: For safety and risk-related queries
+- **RAGQueryAgent**: For complex analysis requiring flight context
+
+### 3. Response Generation
+The selected agent:
+- Executes relevant tools to get flight data
+- Searches the vector database for relevant context
+- Combines results with LLM reasoning
+- Provides a comprehensive, source-attributed response
+
+### 4. Confidence Scoring
+Each response includes a confidence score to help you understand the reliability of the analysis.
 
 ## 🔮 Future Enhancements
 
-- **Real-time Analysis**: Live flight monitoring and analysis
-- **Fleet Management**: Multi-UAV analysis and comparison
-- **Custom Models**: Fine-tuned models for specific UAV types
-- **Integration APIs**: Connect with popular flight planning software
-- **Mobile App**: Native mobile application for field use
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our contributing guidelines for:
-- **Code Standards**: Python and JavaScript style guides
-- **AI Model Integration**: Adding new analysis capabilities
-- **Feature Requests**: Suggesting new functionality
-- **Bug Reports**: Reporting and fixing issues
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-- **Documentation**: Comprehensive API and usage documentation
-- **Community**: Join our Discord for discussions and support
-- **Issues**: GitHub Issues for bug reports and feature requests
-- **Professional Support**: Commercial support options available
+- [ ] Multi-turn conversation memory
+- [ ] Voice interface integration
+- [ ] Custom agent training for specific aircraft types
+- [ ] Real-time flight monitoring chat
+- [ ] Integration with flight planning software
+- [ ] Mobile app chatbot interface
 
 ---
 
 **Built with ❤️ for the UAV community**
-
-*Empowering safer, smarter, and more efficient UAV operations through advanced AI analysis.*

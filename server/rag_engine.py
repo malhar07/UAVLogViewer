@@ -335,30 +335,265 @@ class UAVLogRAGEngine:
         return mode_map.get(mode_num, f"MODE_{mode_num}")
     
     def _create_documents(self, log_data: Dict[str, Any], log_id: str) -> List[Document]:
-        """Create LangChain documents from log data"""
+        """Create detailed, context-rich documents for vector storage with granular flight descriptions"""
         documents = []
         
-        # Create document for summary
-        summary_text = f"""
-        Flight Log Summary for {log_id}:
-        Duration: {log_data['summary'].get('duration_seconds', 0)} seconds
-        Total Messages: {log_data['summary'].get('total_messages', 0)}
-        Message Types: {', '.join(log_data['summary'].get('message_types', []))}
-        """
-        
-        documents.append(Document(
-            page_content=summary_text,
-            metadata={"log_id": log_id, "type": "summary", "timestamp": datetime.now().isoformat()}
-        ))
-        
-        # Create documents for each analysis section
-        for section, data in log_data.items():
-            if isinstance(data, dict) and "error" not in data:
-                content = f"{section.replace('_', ' ').title()} Analysis:\n{json.dumps(data, indent=2)}"
+        try:
+            # Get the analyzer to access time-series data
+            analyzer = LOG_MANAGER.get_analyzer(log_id)
+            if not analyzer:
+                return documents
+            
+            # Create enhanced summary document with rich context
+            summary = log_data.get("summary", {})
+            if "error" not in summary:
+                summary_text = self._create_detailed_summary(summary, log_data, log_id)
                 documents.append(Document(
-                    page_content=content,
-                    metadata={"log_id": log_id, "type": section, "timestamp": datetime.now().isoformat()}
+                    page_content=summary_text,
+                    metadata={"log_id": log_id, "type": "summary", "timestamp": datetime.now().isoformat()}
                 ))
+            
+            # Create time-based chunks with comprehensive descriptions
+            time_chunks = self._create_time_based_chunks(analyzer, log_id)
+            documents.extend(time_chunks)
+            
+            # Create analysis documents with natural language descriptions
+            analysis_docs = self._create_analysis_documents(log_data, log_id)
+            documents.extend(analysis_docs)
+            
+            # Create event-based documents
+            event_docs = self._create_event_documents(analyzer, log_id)
+            documents.extend(event_docs)
+            
+        except Exception as e:
+            print(f"Error creating documents: {e}")
+        
+        return documents
+    
+    def _create_detailed_summary(self, summary: Dict, log_data: Dict, log_id: str) -> str:
+        """Create a comprehensive, natural language summary"""
+        duration = summary.get('duration_seconds', 0)
+        total_msgs = summary.get('total_messages', 0)
+        
+        # Get additional context
+        altitude_data = log_data.get('altitude_analysis', {})
+        battery_data = log_data.get('battery_analysis', {})
+        gps_data = log_data.get('gps_analysis', {})
+        
+        summary_text = f"""Flight Log Analysis for {log_id}:
+
+FLIGHT OVERVIEW:
+This UAV flight lasted {duration:.1f} seconds ({duration/60:.1f} minutes) and recorded {total_msgs:,} total telemetry messages. The log contains data from {len(summary.get('message_types', []))} different message types including GPS positioning, battery status, attitude control, and system health monitoring.
+
+ALTITUDE PERFORMANCE:
+"""
+        
+        if 'error' not in altitude_data:
+            max_alt = altitude_data.get('highest_altitude_m', 0)
+            avg_alt = altitude_data.get('average_altitude_m', 0)
+            alt_time = altitude_data.get('max_altitude_time_s', 0)
+            summary_text += f"The aircraft reached a maximum altitude of {max_alt:.1f} meters at {alt_time:.1f} seconds into the flight. The average flight altitude was {avg_alt:.1f} meters. "
+        
+        summary_text += "\nBATTERY STATUS:\n"
+        if 'error' not in battery_data:
+            min_volt = battery_data.get('min_voltage', 0)
+            max_volt = battery_data.get('max_voltage', 0)
+            health = battery_data.get('health', 'Unknown')
+            summary_text += f"Battery performance was rated as {health}. Voltage ranged from {min_volt:.1f}V to {max_volt:.1f}V throughout the flight. "
+        
+        summary_text += "\nGPS PERFORMANCE:\n"
+        if 'error' not in gps_data:
+            total_readings = gps_data.get('total_gps_readings', 0)
+            signal_loss = gps_data.get('signal_loss_events', 0)
+            poor_signal = gps_data.get('poor_signal_events', 0)
+            summary_text += f"GPS system recorded {total_readings} position readings. There were {signal_loss} signal loss events and {poor_signal} poor signal quality events during the flight."
+        
+        return summary_text
+    
+    def _create_time_based_chunks(self, analyzer: LogAnalyzer, log_id: str) -> List[Document]:
+        """Create detailed time-based chunks describing flight segments"""
+        documents = []
+        
+        try:
+            # Get time-series data
+            gps_data = analyzer.get_gps_coords_series()
+            battery_data = analyzer.get_battery_series()
+            altitude_data = analyzer.get_altitude_series()
+            mode_changes = analyzer.get_mode_changes()
+            events = analyzer.get_significant_events()
+            
+            # Create 10-second chunks with rich descriptions
+            summary = analyzer.get_summary()
+            duration = summary.get('duration_seconds', 0)
+            chunk_size = 10  # seconds
+            
+            for chunk_start in range(0, int(duration), chunk_size):
+                chunk_end = min(chunk_start + chunk_size, duration)
+                chunk_description = self._describe_flight_segment(
+                    chunk_start, chunk_end, gps_data, battery_data, 
+                    altitude_data, mode_changes, events, log_id
+                )
+                
+                if chunk_description.strip():
+                    documents.append(Document(
+                        page_content=chunk_description,
+                        metadata={
+                            "log_id": log_id,
+                            "type": "time_chunk",
+                            "start_time_s": chunk_start,
+                            "end_time_s": chunk_end,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    ))
+        
+        except Exception as e:
+            print(f"Error creating time chunks: {e}")
+        
+        return documents
+    
+    def _describe_flight_segment(self, start_time: float, end_time: float, 
+                                gps_data: List, battery_data: List, altitude_data: List,
+                                mode_changes: List, events: List, log_id: str) -> str:
+        """Create detailed natural language description of a flight segment"""
+        
+        description = f"Flight segment from {start_time:.1f}s to {end_time:.1f}s in log {log_id}:\n\n"
+        
+        # Filter data for this time segment
+        segment_gps = [d for d in gps_data if isinstance(d, dict) and start_time <= d.get('time_s', 0) <= end_time]
+        segment_battery = [d for d in battery_data if isinstance(d, dict) and start_time <= d.get('time_s', 0) <= end_time]
+        segment_altitude = [d for d in altitude_data if isinstance(d, dict) and start_time <= d.get('time_s', 0) <= end_time]
+        segment_modes = [d for d in mode_changes if isinstance(d, dict) and start_time <= d.get('time_s', 0) <= end_time]
+        segment_events = [d for d in events if isinstance(d, dict) and start_time <= d.get('time_s', 0) <= end_time]
+        
+        # GPS and position analysis
+        if segment_gps:
+            avg_lat = sum(d['latitude'] for d in segment_gps) / len(segment_gps)
+            avg_lon = sum(d['longitude'] for d in segment_gps) / len(segment_gps)
+            avg_alt = sum(d['altitude_m'] for d in segment_gps) / len(segment_gps)
+            avg_hdop = sum(d['hdop'] for d in segment_gps) / len(segment_gps)
+            avg_sats = sum(d['satellites'] for d in segment_gps) / len(segment_gps)
+            avg_speed = sum(d['speed_ms'] for d in segment_gps) / len(segment_gps)
+            
+            description += f"POSITION: Aircraft was flying at approximately {avg_lat:.6f}°N, {avg_lon:.6f}°E at an average altitude of {avg_alt:.1f} meters. "
+            description += f"GPS quality showed HDOP of {avg_hdop:.1f} with {avg_sats:.0f} satellites tracked. "
+            description += f"Ground speed averaged {avg_speed:.1f} m/s ({avg_speed*3.6:.1f} km/h). "
+            
+            # Check GPS quality
+            if avg_hdop > 3.0:
+                description += "GPS signal quality was poor during this segment. "
+            elif avg_hdop < 1.5:
+                description += "GPS signal quality was excellent during this segment. "
+        
+        # Battery analysis
+        if segment_battery:
+            voltages = [d.get('voltage_v', 0) for d in segment_battery if d.get('voltage_v', 0) > 0]
+            currents = [d.get('current_a', 0) for d in segment_battery if d.get('current_a', 0) > 0]
+            
+            if voltages:
+                avg_voltage = sum(voltages) / len(voltages)
+                description += f"\nBATTERY: Average voltage was {avg_voltage:.2f}V. "
+                
+                if avg_voltage < 11.1:
+                    description += "Battery voltage was critically low. "
+                elif avg_voltage < 11.8:
+                    description += "Battery voltage was in warning range. "
+            
+            if currents:
+                avg_current = sum(currents) / len(currents)
+                description += f"Current draw averaged {avg_current:.1f}A. "
+        
+        # Flight mode changes
+        if segment_modes:
+            for mode_change in segment_modes:
+                mode_name = mode_change.get('mode', 'Unknown')
+                time_s = mode_change.get('time_s', 0)
+                description += f"\nMODE CHANGE: At {time_s:.1f}s, flight mode changed to {mode_name}. "
+        
+        # Significant events
+        if segment_events:
+            for event in segment_events:
+                event_type = event.get('type', 'unknown')
+                severity = event.get('severity', 'unknown')
+                message = event.get('message', 'No details')
+                time_s = event.get('time_s', 0)
+                description += f"\n{severity.upper()} {event_type.upper()}: At {time_s:.1f}s - {message}. "
+        
+        return description
+    
+    def _create_analysis_documents(self, log_data: Dict, log_id: str) -> List[Document]:
+        """Create detailed analysis documents with natural language descriptions"""
+        documents = []
+        
+        # Battery analysis document
+        battery_data = log_data.get('battery_analysis', {})
+        if 'error' not in battery_data:
+            battery_text = f"""Battery Performance Analysis for {log_id}:
+
+The battery system showed {battery_data.get('health', 'unknown')} performance throughout this flight. 
+Voltage ranged from {battery_data.get('min_voltage', 0):.2f}V to {battery_data.get('max_voltage', 0):.2f}V.
+Average voltage was {battery_data.get('average_voltage', 0):.2f}V.
+Total current consumption was {battery_data.get('total_consumption_mah', 0):.0f} mAh.
+
+Battery health assessment: {battery_data.get('health_details', 'No detailed assessment available')}.
+"""
+            documents.append(Document(
+                page_content=battery_text,
+                metadata={"log_id": log_id, "type": "battery_analysis", "timestamp": datetime.now().isoformat()}
+            ))
+        
+        # GPS analysis document
+        gps_data = log_data.get('gps_analysis', {})
+        if 'error' not in gps_data:
+            gps_text = f"""GPS Performance Analysis for {log_id}:
+
+GPS system recorded {gps_data.get('total_gps_readings', 0)} position readings during the flight.
+Signal loss events: {gps_data.get('signal_loss_events', 0)}
+Poor signal events: {gps_data.get('poor_signal_events', 0)}
+
+First signal loss occurred at: {gps_data.get('first_signal_loss_time_s', 'N/A')} seconds
+First poor signal occurred at: {gps_data.get('first_poor_signal_time_s', 'N/A')} seconds
+
+GPS signal quality was {'excellent' if gps_data.get('signal_loss_events', 0) == 0 else 'poor with multiple interruptions'}.
+"""
+            documents.append(Document(
+                page_content=gps_text,
+                metadata={"log_id": log_id, "type": "gps_analysis", "timestamp": datetime.now().isoformat()}
+            ))
+        
+        return documents
+    
+    def _create_event_documents(self, analyzer: LogAnalyzer, log_id: str) -> List[Document]:
+        """Create documents for significant events with context"""
+        documents = []
+        
+        try:
+            events = analyzer.get_significant_events()
+            
+            # Group related events
+            for event in events:
+                if isinstance(event, dict) and event.get('severity') in ['high', 'medium']:
+                    event_text = f"""Significant Event in {log_id}:
+
+Time: {event.get('time_s', 0):.1f} seconds into flight
+Type: {event.get('type', 'Unknown').title()}
+Severity: {event.get('severity', 'Unknown').title()}
+Message: {event.get('message', 'No details available')}
+
+This event occurred during active flight operations and may indicate a system condition requiring attention.
+"""
+                    documents.append(Document(
+                        page_content=event_text,
+                        metadata={
+                            "log_id": log_id,
+                            "type": "event",
+                            "event_time_s": event.get('time_s', 0),
+                            "severity": event.get('severity', 'unknown'),
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    ))
+        
+        except Exception as e:
+            print(f"Error creating event documents: {e}")
         
         return documents
     
