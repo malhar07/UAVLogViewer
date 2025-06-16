@@ -1,10 +1,10 @@
 # UAV Log Viewer - AI Chatbot Integration
 
-An intelligent chatbot system for UAV flight log analysis, powered by advanced AI technologies including RAG (Retrieval-Augmented Generation) and specialized agent orchestration.
+An intelligent chatbot system for UAV flight log analysis, powered by advanced AI technologies including RAG (Retrieval-Augmented Generation) and specialized agent orchestration, with integrated flight data visualization.
 
 ## 🤖 Overview
 
-This project adds a sophisticated AI chatbot capability to the UAV Log Viewer platform. The chatbot can analyze flight logs, answer questions about flight data, and provide intelligent insights using natural language processing and retrieval-augmented generation.
+This project adds a sophisticated AI chatbot capability to the UAV Log Viewer platform. The chatbot can analyze flight logs, answer questions about flight data, and provide intelligent insights using natural language processing and retrieval-augmented generation. Additionally, it features an integrated visualization system that provides real-time charts and graphs of flight data.
 
 ## ✨ Chatbot Features
 
@@ -32,6 +32,34 @@ This project adds a sophisticated AI chatbot capability to the UAV Log Viewer pl
 - **Performance Metrics**: "How was the battery performance?"
 - **Technical Diagnostics**: "What caused the vibration spike at 5 minutes?"
 - **General Knowledge**: "What is HDOP in GPS systems?"
+
+## 📊 Visualization Features
+
+### 🎨 **Interactive Flight Charts**
+- **Real-time Data Sync**: Automatically syncs with uploaded .bin flight logs
+- **Multiple Chart Types**: Altitude, speed, battery voltage, and GPS flight path
+- **Time-series Analysis**: Proper time scaling with flight duration context
+- **Interactive Interface**: Tabbed navigation between different data views
+
+### 📈 **Supported Visualizations**
+- **Altitude Chart**: Shows altitude changes over flight duration with proper scaling
+- **Speed Chart**: Displays ground speed variations throughout the flight
+- **Battery Chart**: Monitors battery voltage levels and consumption patterns  
+- **Flight Path**: GPS coordinate mapping showing the actual flight trajectory
+- **Flight Modes**: Timeline view of flight mode changes during the mission
+
+### 🔄 **Unified Data Pipeline**
+- **Single Upload**: Upload .bin file once, used by both chatbot and visualization
+- **Shared Processing**: Same data extraction pipeline serves both systems
+- **Automatic Integration**: Visualization appears automatically when flight data loads
+- **Consistent Analysis**: Both chatbot and charts analyze identical flight information
+
+### 💡 **Visualization Benefits**
+- **Quick Overview**: Immediate visual insight into flight performance
+- **Pattern Recognition**: Easy identification of anomalies and trends
+- **Complementary Analysis**: Visual charts enhance chatbot text responses
+- **Flight Validation**: Verify chatbot answers against visual data
+- **Professional Presentation**: Clean, modern interface for flight analysis
 
 ## 🏗️ Chatbot Architecture
 
@@ -83,7 +111,7 @@ This project adds a sophisticated AI chatbot capability to the UAV Log Viewer pl
 - **Ollama** (for local LLM)
 - **Git**
 
-## 🚀 How to Run the Chatbot
+## 🚀 How to Run the System
 
 ### 1. Clone the Repository
 ```bash
@@ -91,7 +119,13 @@ git clone <repository-url>
 cd UAVLogViewer
 ```
 
-### 2. Install Dependencies
+### 2. Install Frontend Dependencies
+```bash
+# Install frontend dependencies
+npm install
+```
+
+### 3. Install Backend Dependencies
 ```bash
 cd server
 python3 -m venv .venv
@@ -99,7 +133,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Setup Ollama
+### 4. Setup Ollama
 ```bash
 # Install Ollama (macOS)
 brew install ollama
@@ -115,7 +149,7 @@ ollama pull phi3:mini
 ollama pull llama3:latest
 ```
 
-### 4. Start the Server
+### 5. Start the Backend Server
 ```bash
 cd server
 source .venv/bin/activate
@@ -124,11 +158,30 @@ python3 api.py
 
 The chatbot API will be available at `http://localhost:8000`
 
-### 5. API Documentation
-- **Interactive API Docs**: `http://localhost:8000/docs`
-- **Chatbot Endpoint**: `POST /agent-chat`
+### 6. Start the Frontend Development Server
+```bash
+# In the root directory
+npm run dev
+```
 
-## 📖 Chatbot Usage Guide
+The web interface will be available at `http://localhost:8082`
+
+### 7. Access the Application
+- **Web Interface**: `http://localhost:8082` - Full UAV Log Viewer with visualization and chat
+- **API Documentation**: `http://localhost:8000/docs` - Backend API documentation
+- **Chatbot Endpoint**: `POST /agent-chat` - Direct API access
+
+## 📖 Usage Guide
+
+### Web Interface Usage (Recommended)
+
+1. **Open the Web Application**: Navigate to `http://localhost:8082`
+2. **Upload Flight Log**: Drag and drop or select a `.bin` flight log file
+3. **View Visualizations**: Switch to the "Visualization" tab to see flight charts
+4. **Ask Questions**: Use the "Chat" tab to interact with the AI assistant about your flight data
+5. **Analyze Results**: Compare visual charts with AI insights for comprehensive analysis
+
+### API Usage (Advanced)
 
 ### 1. Upload a Flight Log
 ```bash
