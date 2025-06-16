@@ -102,23 +102,31 @@ class EnhancedUAVAssistant:
     def _handle_rag_query(self, message: str, log_id: str, analysis_mode: str) -> Dict[str, Any]:
         """Handle queries using RAG engine for deep insights"""
         try:
-            # First, ensure the log is processed in the RAG system
-            rag_result = self.rag_engine.process_log_for_rag(log_id)
+            # For frontend-synced data, the log should already be processed in RAG
+            # Skip the process_log_for_rag step and go directly to querying
             
-            if "error" in rag_result:
-                return {
-                    "response": f"❌ I couldn't process the log file for advanced analysis: {rag_result['error']}",
-                    "error": True
-                }
-            
-            # Query the RAG system
+            # Query the RAG system directly
             query_result = self.rag_engine.query_logs(message, log_id)
             
             if "error" in query_result:
-                return {
-                    "response": f"❌ RAG query failed: {query_result['error']}",
-                    "error": True
-                }
+                # If query fails, it might be because the log wasn't processed yet
+                # Try to process from LOG_MANAGER first (for backward compatibility)
+                try:
+                    from core import LOG_MANAGER
+                    if LOG_MANAGER.get_analyzer(log_id):
+                        rag_result = self.rag_engine.process_log_for_rag(log_id)
+                        if "error" not in rag_result:
+                            # Retry the query after processing
+                            query_result = self.rag_engine.query_logs(message, log_id)
+                except:
+                    pass
+                
+                # If still failing, return a helpful error
+                if "error" in query_result:
+                    return {
+                        "response": f"❌ I don't have information about that flight log. Please make sure the flight data is loaded in the main interface first.",
+                        "error": True
+                    }
             
             # Format concise response - no more verbose formatting
             response = self._format_concise_response(query_result)

@@ -126,6 +126,143 @@ class UAVLogRAGEngine:
         except Exception as e:
             return {"error": f"Failed to process log for RAG: {str(e)}"}
     
+    def process_frontend_data(self, log_id: str, flight_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process flight data received from the frontend UAV Log Viewer"""
+        try:
+            print(f"Processing frontend data for log_id: {log_id}")
+            
+            # Create documents for vector storage from frontend data
+            documents = self._create_documents_from_frontend_data(flight_data, log_id)
+            print(f"Created {len(documents)} documents")
+            
+            # Add to vector store
+            if documents:
+                print("Adding documents to vector store...")
+                self.vectorstore.add_documents(documents)
+                try:
+                    self.vectorstore.persist()
+                    print("Documents persisted successfully")
+                except Exception as persist_error:
+                    print(f"Persistence warning (may be auto-persisted): {persist_error}")
+                
+                # Verify documents were added
+                test_docs = self.vectorstore.similarity_search(f"log {log_id}", k=1)
+                print(f"Verification: Found {len(test_docs)} documents after adding")
+            else:
+                print("No documents were created!")
+            
+            # Perform advanced analysis on the frontend data
+            try:
+                analysis_results = self._perform_advanced_analysis(flight_data)
+            except Exception as analysis_error:
+                print(f"Analysis error (non-critical): {analysis_error}")
+                analysis_results = {"error": "Analysis skipped for frontend data", "details": str(analysis_error)}
+            
+            return {
+                "log_id": log_id,
+                "documents_created": len(documents),
+                "analysis": analysis_results,
+                "status": "success",
+                "source": "frontend_sync"
+            }
+            
+        except Exception as e:
+            print(f"Error processing frontend data: {e}")
+            return {"error": f"Failed to process frontend data for RAG: {str(e)}"}
+    
+    def _create_documents_from_frontend_data(self, flight_data: Dict[str, Any], log_id: str) -> List[Document]:
+        """Create documents for vector storage from frontend flight data"""
+        documents = []
+        
+        try:
+            # Create summary document
+            summary = flight_data.get("summary", {})
+            if summary:
+                summary_text = f"""
+Flight Summary for Log {log_id}:
+Duration: {summary.get('duration', 'N/A')} seconds
+Maximum Altitude: {summary.get('maxAltitude', 'N/A')} meters
+Total Distance: {summary.get('totalDistance', 'N/A')} meters
+Trajectory Points: {summary.get('trajectoryPoints', 'N/A')}
+Start Time: {summary.get('startTime', 'N/A')}
+Vehicle Type: {flight_data.get('vehicle', 'Unknown')}
+Log Type: {flight_data.get('logType', 'bin')}
+"""
+                documents.append(Document(
+                    page_content=summary_text,
+                    metadata={"log_id": log_id, "type": "flight_summary", "source": "frontend"}
+                ))
+            
+            # Create flight mode document
+            flight_modes = flight_data.get("flightModeChanges", [])
+            if flight_modes:
+                modes_text = f"Flight Mode Changes for Log {log_id}:\n"
+                for i, mode_change in enumerate(flight_modes):
+                    if len(mode_change) >= 2:
+                        timestamp = mode_change[0]
+                        mode_name = mode_change[1]
+                        modes_text += f"Time {timestamp}ms: {mode_name}\n"
+                
+                documents.append(Document(
+                    page_content=modes_text,
+                    metadata={"log_id": log_id, "type": "flight_modes", "source": "frontend"}
+                ))
+            
+            # Create trajectory analysis document
+            trajectory = flight_data.get("trajectory", [])
+            if trajectory and len(trajectory) > 0:
+                start_point = trajectory[0] if len(trajectory[0]) >= 4 else [0, 0, 0, 0]
+                end_point = trajectory[-1] if len(trajectory[-1]) >= 4 else [0, 0, 0, 0]
+                
+                trajectory_text = f"""
+Trajectory Analysis for Log {log_id}:
+Total GPS Points: {len(trajectory)}
+Start Position: Latitude {start_point[1]}, Longitude {start_point[0]}, Altitude {start_point[2]}m
+End Position: Latitude {end_point[1]}, Longitude {end_point[0]}, Altitude {end_point[2]}m
+Start Time: {start_point[3]}ms
+End Time: {end_point[3]}ms
+Flight Duration: {(end_point[3] - start_point[3]) / 1000:.1f} seconds
+
+Flight Path Quality: Good GPS tracking with {len(trajectory)} recorded positions
+"""
+                documents.append(Document(
+                    page_content=trajectory_text,
+                    metadata={"log_id": log_id, "type": "trajectory_analysis", "source": "frontend"}
+                ))
+            
+            # Create events document
+            events = flight_data.get("events", [])
+            if events:
+                events_text = f"Flight Events for Log {log_id}:\n"
+                for event in events:
+                    if hasattr(event, 'get') or isinstance(event, dict):
+                        events_text += f"Event: {event}\n"
+                    else:
+                        events_text += f"Event: {str(event)}\n"
+                
+                documents.append(Document(
+                    page_content=events_text,
+                    metadata={"log_id": log_id, "type": "flight_events", "source": "frontend"}
+                ))
+            
+            # Create text messages document
+            text_messages = flight_data.get("textMessages", [])
+            if text_messages:
+                messages_text = f"Text Messages for Log {log_id}:\n"
+                for msg in text_messages:
+                    messages_text += f"Message: {msg}\n"
+                
+                documents.append(Document(
+                    page_content=messages_text,
+                    metadata={"log_id": log_id, "type": "text_messages", "source": "frontend"}
+                ))
+            
+            return documents
+            
+        except Exception as e:
+            print(f"Error creating documents from frontend data: {e}")
+            return []
+    
     def _extract_comprehensive_data(self, analyzer: LogAnalyzer) -> Dict[str, Any]:
         """Extract comprehensive data from log for analysis"""
         messages = analyzer.parser.get_messages()
@@ -603,7 +740,44 @@ This event occurred during active flight operations and may indicate a system co
             if not self.vectorstore:
                 return {"error": "Vector store not initialized"}
             
-            # Create retrieval QA chain
+            # Check if we have documents for this specific log_id
+            if log_id:
+                try:
+                    # Try to retrieve documents without filter first (more compatible)
+                    log_specific_docs = self.vectorstore.similarity_search(
+                        f"log {log_id} flight summary", 
+                        k=3
+                    )
+                    
+                    # Check if any documents contain our log_id
+                    relevant_docs = []
+                    for doc in log_specific_docs:
+                        if hasattr(doc, 'metadata') and doc.metadata.get('log_id') == log_id:
+                            relevant_docs.append(doc)
+                    
+                    # If no relevant documents found, try a broader search
+                    if not relevant_docs:
+                        log_specific_docs = self.vectorstore.similarity_search(
+                            f"flight data trajectory altitude", 
+                            k=5
+                        )
+                        
+                        # Check again for our log_id
+                        for doc in log_specific_docs:
+                            if hasattr(doc, 'metadata') and doc.metadata.get('log_id') == log_id:
+                                relevant_docs.append(doc)
+                    
+                    # If still no documents, return helpful error
+                    if not relevant_docs:
+                        return {"error": f"No flight data found for log {log_id}. Please ensure the flight data is loaded first."}
+                    
+                    print(f"Found {len(relevant_docs)} relevant documents for log {log_id}")
+                
+                except Exception as e:
+                    print(f"Error checking for log documents: {e}")
+                    # Continue with regular query if filtering fails
+            
+            # Create retrieval QA chain with standard search (no filtering to avoid compatibility issues)
             qa_chain = RetrievalQA.from_chain_type(
                 llm=self.llm,
                 chain_type="stuff",
@@ -611,8 +785,9 @@ This event occurred during active flight operations and may indicate a system co
                 return_source_documents=True
             )
             
-            # Create extremely restrictive prompt
-            enhanced_query = f"""Answer this question using only the flight log data provided. Give only the direct answer with no extra text.
+            # Create extremely restrictive prompt with log_id context
+            context_part = f" for log {log_id}" if log_id else ""
+            enhanced_query = f"""Answer this question using only the flight log data provided{context_part}. Give only the direct answer with no extra text.
 
 Rules:
 - Give ONLY the numerical answer with units
@@ -636,7 +811,8 @@ Direct answer:"""
                     }
                     for doc in result["source_documents"]
                 ],
-                "query": query
+                "query": query,
+                "log_id": log_id
             }
             
         except Exception as e:

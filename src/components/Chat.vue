@@ -15,7 +15,7 @@
     </div>
 
     <!-- Enhanced Chat Dialog -->
-          <div v-if="isOpen" class="chat-dialog">
+    <div v-if="isOpen" class="chat-dialog">
       <!-- Header -->
       <div class="chat-header">
         <div class="header-content">
@@ -30,35 +30,18 @@
         </div>
       </div>
 
-      <!-- Upload Area -->
-      <div class="upload-section">
-        <div 
-          class="upload-area" 
-          :class="{ 'drag-over': isDragOver, 'has-file': uploadedFile }"
-          @drop="handleDrop"
-          @dragover.prevent="handleDragOver"
-          @dragleave="handleDragLeave"
-          @click="triggerFileInput"
-        >
-          <input 
-            ref="fileInput" 
-            type="file" 
-            accept=".bin" 
-            @change="handleFileSelect" 
-            style="display: none"
-          >
-          <div v-if="!uploadedFile" class="upload-placeholder">
-            <div class="upload-icon">📁</div>
-            <p><strong>Drop .bin log file here</strong></p>
-            <p class="upload-hint">or click to browse</p>
-          </div>
-          <div v-else class="uploaded-file-info">
-            <div class="file-icon">✅</div>
-            <div class="file-details">
-              <p class="file-name">{{ uploadedFile.name }}</p>
-              <p class="file-meta">{{ formatFileSize(uploadedFile.size) }} • Ready for analysis</p>
-            </div>
-            <button @click.stop="clearFile" class="clear-file-btn">×</button>
+      <!-- Status Area -->
+      <div class="status-section">
+        <div v-if="!hasLogData" class="no-data-status">
+          <div class="status-icon">📁</div>
+          <p><strong>No flight data loaded</strong></p>
+          <p class="status-hint">Upload a .bin file using the main interface to start analysis</p>
+        </div>
+        <div v-else class="data-ready-status">
+          <div class="status-icon">✅</div>
+          <div class="status-details">
+            <p class="status-title">Flight data ready for analysis</p>
+            <p class="status-meta">{{ flightSummary }}</p>
           </div>
         </div>
       </div>
@@ -76,7 +59,8 @@
               <li>📡 <strong>GPS Issues:</strong> Signal loss and accuracy problems</li>
               <li>⚠️ <strong>Error Detection:</strong> Flight issues and warnings</li>
             </ul>
-            <p>Upload a .bin log file to get started!</p>
+            <p v-if="!hasLogData">Upload a .bin log file in the main interface to get started!</p>
+            <p v-else>Your flight data is ready! Ask me anything about the flight.</p>
           </div>
         </div>
 
@@ -107,7 +91,7 @@
       <!-- Input Area -->
       <div class="input-area">
         <!-- Quick Actions -->
-        <div v-if="uploadedFile" class="quick-actions">
+        <div v-if="hasLogData" class="quick-actions">
           <button @click="askQuestion('What is the flight summary?')" class="quick-action-btn">
             📊 Summary
           </button>
@@ -117,6 +101,9 @@
           <button @click="askQuestion('Were there any GPS issues?')" class="quick-action-btn">
             📡 GPS Status
           </button>
+          <button @click="askQuestion('How was the battery performance?')" class="quick-action-btn">
+            🔋 Battery
+          </button>
         </div>
 
         <!-- Message Input -->
@@ -124,15 +111,15 @@
           <textarea
             v-model="currentMessage"
             @keydown="handleKeyDown"
-            placeholder="Ask about your flight log..."
+            :placeholder="hasLogData ? 'Ask about your flight log...' : 'Load flight data first...'"
             class="message-input"
             rows="2"
-            :disabled="isLoading"
+            :disabled="isLoading || !hasLogData"
           ></textarea>
           <button 
             @click="sendMessage" 
             class="send-btn" 
-            :disabled="!currentMessage.trim() || isLoading"
+            :disabled="!currentMessage.trim() || isLoading || !hasLogData"
             :class="{ 'loading': isLoading }"
           >
             <span v-if="isLoading" class="loading-spinner"></span>
@@ -145,26 +132,55 @@
 </template>
 
 <script>
+import { store } from './Globals.js'
+
 export default {
   name: 'Chat',
   data() {
     return {
+      state: store,
       isOpen: false,
-      isDragOver: false,
       currentMessage: '',
       messages: [],
       isLoading: false,
       isTyping: false,
       typingText: 'Analyzing...',
       unreadCount: 0,
-      uploadedFile: null,
       logId: null
     }
   },
+  computed: {
+    hasLogData() {
+      return this.state.processDone && 
+             this.state.currentTrajectory && 
+             this.state.currentTrajectory.length > 0
+    },
+    
+    flightSummary() {
+      if (!this.hasLogData) return ''
+      
+      try {
+        const trajectory = this.state.currentTrajectory
+        const duration = this.calculateFlightDuration()
+        const maxAlt = this.calculateMaxAltitude()
+        const points = trajectory.length
+        
+        return `${duration}s flight, ${maxAlt}m max altitude, ${points} GPS points`
+      } catch (e) {
+        return 'Flight data available'
+      }
+    }
+  },
+  watch: {
+    'state.processDone'(newVal) {
+      if (newVal && this.hasLogData) {
+        this.sendLogDataToBackend()
+      }
+    }
+  },
   mounted() {
-    // Prevent default drag and drop behavior on the entire window
-    window.addEventListener('dragover', this.preventDefaults, false)
-    window.addEventListener('drop', this.preventDefaults, false)
+    // Listen for flight data processing completion
+    this.$eventHub.$on('messagesDoneLoading', this.onFlightDataReady)
     
     // Add global error handler
     window.addEventListener('error', this.handleGlobalError)
@@ -173,17 +189,11 @@ export default {
   
   beforeDestroy() {
     // Clean up event listeners
-    window.removeEventListener('dragover', this.preventDefaults, false)
-    window.removeEventListener('drop', this.preventDefaults, false)
+    this.$eventHub.$off('messagesDoneLoading', this.onFlightDataReady)
     window.removeEventListener('error', this.handleGlobalError)
     window.removeEventListener('unhandledrejection', this.handleUnhandledRejection)
   },
   methods: {
-    preventDefaults(e) {
-      e.preventDefault()
-      e.stopPropagation()
-    },
-    
     handleGlobalError(event) {
       console.error('Global error:', event.error)
     },
@@ -192,6 +202,7 @@ export default {
       console.error('Unhandled promise rejection:', event.reason)
       event.preventDefault()
     },
+    
     toggleChat() {
       this.isOpen = !this.isOpen
       if (this.isOpen) {
@@ -202,110 +213,131 @@ export default {
       }
     },
 
-    async handleFileSelect(event) {
+    onFlightDataReady() {
+      if (this.hasLogData) {
+        this.sendLogDataToBackend()
+        this.addMessage('assistant', '✅ Flight data loaded! I can now analyze your flight. What would you like to know?')
+      }
+    },
+
+    async sendLogDataToBackend() {
       try {
-        const file = event.target.files[0]
-        if (file) {
-          await this.uploadFile(file)
-        }
-      } catch (error) {
-        console.error('File select error:', error)
-        this.addMessage('assistant', `❌ File selection error: ${error.message}`)
-      }
-    },
-
-    async handleDrop(event) {
-      event.preventDefault()
-      event.stopPropagation()
-      this.isDragOver = false
-      
-      const files = event.dataTransfer.files
-      if (files.length > 0) {
-        await this.uploadFile(files[0])
-      }
-    },
-
-    handleDragOver(event) {
-      event.preventDefault()
-      event.stopPropagation()
-      this.isDragOver = true
-    },
-
-    handleDragLeave(event) {
-      event.preventDefault()
-      event.stopPropagation()
-      this.isDragOver = false
-    },
-
-    triggerFileInput() {
-      this.$refs.fileInput.click()
-    },
-
-    clearFile() {
-      this.uploadedFile = null
-      this.logId = null
-      this.$refs.fileInput.value = ''
-      this.addMessage('assistant', 'Log file cleared. Upload a new .bin file to continue analysis.')
-    },
-
-    async uploadFile(file) {
-      if (!file.name.toLowerCase().endsWith('.bin')) {
-        this.addMessage('assistant', '❌ Please upload a .bin log file for analysis.')
-        return
-      }
-
-      this.isLoading = true
-      this.setTyping('Uploading and processing log file...')
-
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-
-        const response = await fetch('/api/upload', {
+        // Create a summary of the flight data to send to the backend
+        const flightData = this.extractFlightData()
+        
+        // Generate a unique log ID based on the data
+        this.logId = this.generateLogId(flightData)
+        
+        console.log('Sending flight data to backend with logId:', this.logId)
+        
+        // Send the processed data to the backend for RAG processing
+        const response = await fetch('/api/sync-flight-data', {
           method: 'POST',
-          body: formData
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            logId: this.logId,
+            flightData: flightData
+          })
         })
 
-        const result = await response.json()
-
-        if (response.ok) {
-          this.uploadedFile = file
-          this.logId = result.log_id
-          
-          console.log('Upload successful, logId set to:', this.logId) // Debug log
-          
-          let message = `✅ **Log uploaded successfully!**\n\n`
-          message += `📊 **Analysis Complete:**\n`
-          message += `• File: ${result.filename}\n`
-          message += `• Size: ${this.formatFileSize(result.size)}\n`
-          message += `• Log ID: ${result.log_id}\n\n`
-          
-          if (result.basic_analysis) {
-            message += `**Quick Summary:**\n`
-            message += `• Duration: ${result.basic_analysis.duration_seconds || 0}s\n`
-            message += `• Messages: ${result.basic_analysis.total_messages || 0}\n`
-            message += `• Types: ${result.basic_analysis.message_types?.length || 0} different message types\n\n`
-          }
-          
-          message += `🚀 **Ready for analysis!** Try asking:\n`
-          message += `• "Give me flight summary"\n`
-          message += `• "What was the highest altitude?"\n`
-          message += `• "Were there any GPS issues?"`
-
-          this.addMessage('assistant', message)
+        if (!response.ok) {
+          console.error('Failed to sync flight data with backend')
         } else {
-          this.addMessage('assistant', `❌ Upload failed: ${result.detail || 'Unknown error'}`)
+          console.log('Flight data successfully synced with backend')
         }
       } catch (error) {
-        this.addMessage('assistant', `❌ Upload error: ${error.message}`)
-      } finally {
-        this.isLoading = false
-        this.clearTyping()
+        console.error('Error sending flight data to backend:', error)
       }
+    },
+
+    extractFlightData() {
+      // Extract comprehensive flight data from the global store
+      const data = {
+        trajectory: this.state.currentTrajectory.slice(), // Copy array
+        flightModeChanges: this.state.flightModeChanges.slice(),
+        events: this.state.events.slice(),
+        textMessages: this.state.textMessages.slice(),
+        timeAttitude: { ...this.state.timeAttitude },
+        timeAttitudeQ: { ...this.state.timeAttitudeQ },
+        timeTrajectory: { ...this.state.timeTrajectory },
+        metadata: this.state.metadata,
+        vehicle: this.state.vehicle,
+        logType: this.state.logType,
+        summary: {
+          duration: this.calculateFlightDuration(),
+          maxAltitude: this.calculateMaxAltitude(),
+          totalDistance: this.calculateTotalDistance(),
+          startTime: this.state.metadata?.startTime,
+          trajectoryPoints: this.state.currentTrajectory.length
+        }
+      }
+      
+      return data
+    },
+
+    generateLogId(flightData) {
+      // Generate a consistent ID based on flight data
+      const dataString = JSON.stringify({
+        points: flightData.trajectory.length,
+        duration: flightData.summary.duration,
+        startTime: flightData.summary.startTime
+      })
+      
+      // Simple hash function
+      let hash = 0
+      for (let i = 0; i < dataString.length; i++) {
+        const char = dataString.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash // Convert to 32-bit integer
+      }
+      
+      return Math.abs(hash).toString(16).substring(0, 8)
+    },
+
+    calculateFlightDuration() {
+      if (!this.state.currentTrajectory || this.state.currentTrajectory.length < 2) return 0
+      
+      const start = this.state.currentTrajectory[0][3] // time
+      const end = this.state.currentTrajectory[this.state.currentTrajectory.length - 1][3]
+      return ((end - start) / 1000).toFixed(1)
+    },
+
+    calculateMaxAltitude() {
+      if (!this.state.currentTrajectory) return 0
+      
+      const altitudes = this.state.currentTrajectory.map(point => point[2]) // altitude
+      return Math.max(...altitudes).toFixed(1)
+    },
+
+    calculateTotalDistance() {
+      if (!this.state.currentTrajectory || this.state.currentTrajectory.length < 2) return 0
+      
+      let distance = 0
+      for (let i = 1; i < this.state.currentTrajectory.length; i++) {
+        const prev = this.state.currentTrajectory[i - 1]
+        const curr = this.state.currentTrajectory[i]
+        if (prev[1] && prev[0] && curr[1] && curr[0]) { // lat, lon
+          distance += this.calculateDistance(prev[1], prev[0], curr[1], curr[0])
+        }
+      }
+      return distance.toFixed(0)
+    },
+
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000 // Earth's radius in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180
+      const dLon = (lon2 - lon1) * Math.PI / 180
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+      return R * c
     },
 
     async sendMessage() {
-      if (!this.currentMessage.trim() || this.isLoading) return
+      if (!this.currentMessage.trim() || this.isLoading || !this.hasLogData) return
 
       const message = this.currentMessage.trim()
       this.addMessage('user', message)
@@ -328,14 +360,11 @@ export default {
           msg: message
         })
         
-        console.log('Current logId:', this.logId) // Debug log
-        
         if (this.logId) {
           params.append('logId', this.logId)
         }
 
         const url = `/api/chat?${params}`
-        console.log('Chat request URL:', url) // Debug log
 
         const response = await fetch(url, {
           method: 'POST'
@@ -381,14 +410,6 @@ export default {
         .replace(/`(.*?)`/g, '<code>$1</code>')
         .replace(/\n/g, '<br>')
         .replace(/• /g, '• ')
-    },
-
-    formatFileSize(bytes) {
-      if (bytes === 0) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     },
 
     formatTimestamp(timestamp) {
@@ -545,97 +566,51 @@ export default {
   justify-content: center;
 }
 
-.upload-section {
+.status-section {
   padding: 12px;
   border-bottom: 1px solid #eee;
 }
 
-.upload-area {
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  padding: 12px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.upload-area.drag-over {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.05);
-}
-
-.upload-area.has-file {
-  border-color: #2ed573;
-  background: rgba(46, 213, 115, 0.05);
-}
-
-.upload-placeholder {
+.no-data-status {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
 
-.upload-icon {
+.status-icon {
   font-size: 24px;
   margin-bottom: 4px;
 }
 
-.upload-placeholder p {
-  margin: 0;
-  font-size: 12px;
-}
-
-.upload-hint {
+.status-hint {
   color: #666;
   font-size: 10px;
 }
 
-.uploaded-file-info {
+.data-ready-status {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
 }
 
-.file-icon {
-  font-size: 20px;
-}
-
-.file-details {
+.status-details {
   flex: 1;
   text-align: left;
 }
 
-.file-name {
+.status-title {
   margin: 0;
   font-size: 12px;
   font-weight: 500;
   color: #333;
 }
 
-.file-meta {
+.status-meta {
   margin: 0;
   font-size: 10px;
   color: #666;
-}
-
-.clear-file-btn {
-  background: #ff4757;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .messages-container {

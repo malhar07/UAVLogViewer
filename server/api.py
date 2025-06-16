@@ -235,6 +235,53 @@ async def direct_rag_query(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"RAG query failed: {str(e)}")
 
+@app.post("/sync-flight-data")
+async def sync_flight_data(
+    request: Dict[str, Any]
+):
+    """Sync flight data from the original UAV Log Viewer to the chatbot backend"""
+    try:
+        log_id = request.get("logId")
+        flight_data = request.get("flightData")
+        
+        if not log_id or not flight_data:
+            raise HTTPException(status_code=400, detail="logId and flightData are required")
+        
+        # Create a mock log analyzer from the flight data
+        from core import LogAnalyzer
+        
+        # Store the flight data in a way that the RAG engine can process it
+        # We'll create a synthetic log entry that mimics the structure expected by the system
+        synthetic_log_data = {
+            "summary": flight_data.get("summary", {}),
+            "trajectory": flight_data.get("trajectory", []),
+            "flight_modes": flight_data.get("flightModeChanges", []),
+            "events": flight_data.get("events", []),
+            "text_messages": flight_data.get("textMessages", []),
+            "attitude_data": flight_data.get("timeAttitude", {}),
+            "attitude_q_data": flight_data.get("timeAttitudeQ", {}),
+            "metadata": flight_data.get("metadata", {}),
+            "vehicle": flight_data.get("vehicle", "unknown"),
+            "log_type": flight_data.get("logType", "bin")
+        }
+        
+        # Process with RAG engine
+        rag_result = RAG_ENGINE.process_frontend_data(log_id, synthetic_log_data)
+        
+        return {
+            "log_id": log_id,
+            "status": "success",
+            "rag_processing": rag_result,
+            "message": "Flight data synchronized successfully with backend",
+            "enhanced_capabilities": True,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to sync flight data: {str(e)}")
+
 @app.post("/compare-flights")
 async def compare_flights(log_ids: list[str] = Query(..., description="List of log IDs to compare")):
     """Compare multiple flights using enhanced AI analysis"""
