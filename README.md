@@ -13,37 +13,31 @@ An intelligent chatbot system for UAV flight log analysis, powered by advanced A
 - **Interactive Charts**: Real-time, interactive charts for altitude, speed, battery voltage/current, and GPS flight path.
 - **Unified Pipeline**: Single .bin file upload for both chatbot analysis and dynamic visualizations, ensuring consistent data.
 
-## 🏗️ Chatbot Architecture
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AI Chatbot System                       │
+│                   UAV Log Viewer System                    │
 ├─────────────────────────────────────────────────────────────┤
-│  Chat Interface (POST /agent-chat)                        │
-│  ├── Message Processing                                   │
-│  ├── Intent Classification                                │
-│  └── Response Generation                                  │
+│  Frontend Web Interface (Vue.js)                          │
+│  ├── File Upload (.bin logs)                              │
+│  ├── Visualization Tab (Charts & GPS)                     │
+│  └── Chat Tab (AI Assistant)                              │
 ├─────────────────────────────────────────────────────────────┤
-│  Agent Orchestrator                                        │
-│  ├── LLM-based Intent Classification                      │
-│  ├── Agent Selection & Routing                            │
-│  └── Response Synthesis                                   │
+│  Unified Data Pipeline                                      │
+│  ├── .bin File Processing (pymavlink)                     │
+│  ├── Global Store (Vuex)                                  │
+│  └── Auto Data Sync (POST /sync-flight-data)              │
 ├─────────────────────────────────────────────────────────────┤
-│  Specialized Agents                                        │
-│  ├── FlightAnalysisAgent (altitude, speed, performance)   │
-│  ├── SafetyAgent (risk assessment, warnings)              │
-│  └── RAGQueryAgent (deep log queries)                     │
+│  Dual Analysis Systems                                      │
+│  ├── Visualization Engine (Chart.js, Interactive Charts)  │
+│  └── AI Chatbot System                                    │
 ├─────────────────────────────────────────────────────────────┤
-│  RAG Engine                                                │
-│  ├── ChromaDB Vector Database                             │
-│  ├── Flight Segment Embeddings                            │
-│  ├── Semantic Search                                      │
-│  └── Context Retrieval                                    │
-├─────────────────────────────────────────────────────────────┤
-│  LLM Integration                                           │
-│  ├── Ollama Local LLM                                     │
-│  ├── LangChain Framework                                  │
-│  └── Prompt Engineering                                   │
+│  AI Chatbot Backend                                        │
+│  ├── Agent Orchestrator (Intent Classification)           │
+│  ├── Specialized Agents (Flight, Safety, RAG)            │
+│  ├── RAG Engine (ChromaDB Vector Storage)                 │
+│  └── LLM Integration (Ollama + LangChain)                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
