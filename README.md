@@ -168,8 +168,6 @@ The web interface will be available at `http://localhost:8082`
 
 ### 7. Access the Application
 - **Web Interface**: `http://localhost:8082` - Full UAV Log Viewer with visualization and chat
-- **API Documentation**: `http://localhost:8000/docs` - Backend API documentation
-- **Chatbot Endpoint**: `POST /agent-chat` - Direct API access
 
 ## 📖 Usage Guide
 
@@ -181,89 +179,7 @@ The web interface will be available at `http://localhost:8082`
 4. **Ask Questions**: Use the "Chat" tab to interact with the AI assistant about your flight data
 5. **Analyze Results**: Compare visual charts with AI insights for comprehensive analysis
 
-### API Usage (Advanced)
 
-### 1. Upload a Flight Log
-```bash
-curl -X POST "http://localhost:8000/upload" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@your_flight_log.bin"
-```
-
-### 2. Get Log ID
-```bash
-curl "http://localhost:8000/logs"
-```
-
-### 3. Chat with the AI Assistant
-
-#### Basic Flight Analysis
-```bash
-curl -X POST "http://localhost:8000/agent-chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "What was the maximum altitude during this flight?",
-    "log_id": "your_log_id"
-  }'
-```
-
-#### Safety Assessment
-```bash
-curl -X POST "http://localhost:8000/agent-chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Were there any safety issues during the flight?",
-    "log_id": "your_log_id"
-  }'
-```
-
-#### Performance Analysis
-```bash
-curl -X POST "http://localhost:8000/agent-chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "How was the battery performance throughout the flight?",
-    "log_id": "your_log_id"
-  }'
-```
-
-#### Technical Diagnostics
-```bash
-curl -X POST "http://localhost:8000/agent-chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Explain the vibration levels during takeoff",
-    "log_id": "your_log_id"
-  }'
-```
-
-## 📊 Chatbot API Endpoints
-
-### Primary Chatbot Endpoint
-- `POST /agent-chat` - Main chatbot interface for AI-powered flight analysis
-
-### Request Format
-```json
-{
-  "message": "Your question about the flight",
-  "log_id": "flight_log_identifier"
-}
-```
-
-### Response Format
-```json
-{
-  "response": "AI-generated response",
-  "agent_used": "FlightAnalysisAgent",
-  "confidence": 0.95,
-  "sources": ["flight_segment_1", "flight_segment_2"],
-  "timestamp": "2024-01-01T12:00:00Z"
-}
-```
-
-### Supporting Endpoints
-- `POST /upload` - Upload flight log for analysis
-- `GET /logs` - List available logs for chatbot queries
 
 ## 🎯 Chatbot Use Cases
 
